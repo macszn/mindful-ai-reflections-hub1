@@ -1,32 +1,68 @@
 
-import React from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { ArrowUpRight, ArrowDownRight, Lightbulb, TrendingUp, Target } from 'lucide-react';
+import axios from 'axios';
 
 // Mock data for the charts
-const weeklyMoodData = [
-  { day: 'Mon', value: 3, mood: 'anxious' },
-  { day: 'Tue', value: 2, mood: 'sad' },
-  { day: 'Wed', value: 4, mood: 'calm' },
-  { day: 'Thu', value: 5, mood: 'happy' },
-  { day: 'Fri', value: 4, mood: 'calm' },
-  { day: 'Sat', value: 5, mood: 'happy' },
-  { day: 'Sun', value: 5, mood: 'excited' },
-];
+// const weeklyMoodData = [
+//   { day: 'Mon', value: 3, mood: 'anxious' },
+//   { day: 'Tue', value: 2, mood: 'sad' },
+//   { day: 'Wed', value: 4, mood: 'calm' },
+//   { day: 'Thu', value: 5, mood: 'happy' },
+//   { day: 'Fri', value: 4, mood: 'calm' },
+//   { day: 'Sat', value: 5, mood: 'happy' },
+//   { day: 'Sun', value: 5, mood: 'excited' },
+// ];
 
-const monthlyMoodData = [
-  { name: 'Happy', value: 12 },
-  { name: 'Calm', value: 8 },
-  { name: 'Anxious', value: 6 },
-  { name: 'Sad', value: 4 },
-  { name: 'Angry', value: 2 },
-];
+// const monthlyMoodData = [
+//   { name: 'Happy', value: 12 },
+//   { name: 'Calm', value: 8 },
+//   { name: 'Anxious', value: 6 },
+//   { name: 'Sad', value: 4 },
+//   { name: 'Angry', value: 2 },
+// ];
 
-const COLORS = ['#4CAF50', '#2196F3', '#FFC107', '#9C27B0', '#F44336'];
 
 const InsightsPage = () => {
+  const [loading, setLoading] = useState(true);
+   const [insights, setInsights] = useState<any>(null);
+  
+   useEffect(() => {
+     const userId = JSON.parse(localStorage.getItem('mindful_users') as string).id;
+     if (!userId) return;
+  
+     const fetchInsights = async () => {
+       try {
+         const res = await axios.get(`http://localhost:4000/api/insights/${userId}`);
+         setInsights(res.data);
+         console.log(res);
+       } catch (error) {
+         console.error('Failed to fetch insights:', error);
+       } finally {
+         setLoading(false);
+       }
+     };
+  
+     fetchInsights();
+   }, []);
+  
+   if (loading) {
+     return <div className="text-center py-20 text-muted-foreground">Loading insights...</div>;
+   }
+  
+   const {
+     weeklyAverageMood,
+     mostFrequentMood,
+     journalEntries,
+     streak,
+     weeklyMoodData,
+     monthlyMoodData
+   } = insights || {};
+  
+  const COLORS = ['#4CAF50', '#2196F3', '#FFC107', '#9C27B0', '#F44336'];
   return (
     <div className="container mx-auto max-w-6xl px-4 py-8">
       <div className="text-center mb-8">
@@ -39,11 +75,11 @@ const InsightsPage = () => {
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>Weekly Average Mood</CardDescription>
-            <CardTitle className="text-2xl">Good</CardTitle>
+            <CardTitle className="text-2xl">{weeklyAverageMood?.label ?? 'N/A'}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground text-sm">15% improvement</span>
+              <span className="text-muted-foreground text-sm">{weeklyAverageMood?.improvement || '0%'} improvement</span>
               <ArrowUpRight className="text-green-500 h-4 w-4" />
             </div>
           </CardContent>
@@ -52,12 +88,12 @@ const InsightsPage = () => {
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>Most Frequent Mood</CardDescription>
-            <CardTitle className="text-2xl">Happy</CardTitle>
+            <CardTitle className="text-2xl">{mostFrequentMood?.mood ?? 'N/A'}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground text-sm">5 occurrences</span>
-              <span className="text-xl">😊</span>
+              <span className="text-muted-foreground text-sm"> {mostFrequentMood?.count ?? 0} occurrences</span>
+              <span className="text-xl">{mostFrequentMood?.emoji ?? '🙂'}</span>
             </div>
           </CardContent>
         </Card>
@@ -65,11 +101,11 @@ const InsightsPage = () => {
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>Journal Entries</CardDescription>
-            <CardTitle className="text-2xl">12</CardTitle>
+            <CardTitle className="text-2xl">{journalEntries?.total ?? 0}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground text-sm">3 this week</span>
+              <span className="text-muted-foreground text-sm">{journalEntries?.thisWeek ?? 0} this week</span>
               <ArrowDownRight className="text-red-500 h-4 w-4" />
             </div>
           </CardContent>
@@ -78,7 +114,7 @@ const InsightsPage = () => {
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>Consecutive Days</CardDescription>
-            <CardTitle className="text-2xl">5</CardTitle>
+            <CardTitle className="text-2xl">{streak?.consecutiveDays ?? 0}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
@@ -143,7 +179,7 @@ const InsightsPage = () => {
                       dataKey="value"
                       label={({name, percent}) => `${name} ${(percent * 100).toFixed(0)}%`}
                     >
-                      {monthlyMoodData.map((entry, index) => (
+                      {monthlyMoodData?.map((entry: any, index: number) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>

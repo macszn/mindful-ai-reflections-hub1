@@ -52,7 +52,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       if (data.success) {
         const loggedInUser = {
-          id: data.user.id,
+          id: data.user._id,
           name: data.user.name,
           email: data.user.email
         };
